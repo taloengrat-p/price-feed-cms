@@ -12,8 +12,12 @@
 ## Features & UI Design
 - **Live Price Monitor** (`src/app/page.tsx`): 
   - ดึงข้อมูลจาก Firebase Realtime Database (`price/`) แบบ Real-time
-  - **Animation**: มี Component `PriceTicker` ที่จำราคาเก่าไว้ หากราคาใหม่สูงกว่าเดิมตัวเลขจะกระพริบ **สีเขียวแบบเรืองแสง (Glow)** และหากต่ำกว่าจะกระพริบ **สีแดงแบบเรืองแสง**
-- **UI Aesthetics**: เน้นความ Premium (Dark mode, Glassmorphism, Smooth gradients)
+  - **Connection Status**: มีแถบสถานะ (Badge) แสดงการเชื่อมต่อกับ Firebase และ Backend (`/api/settings/sync-toggles`) แบบ Real-time
+  - **Animation**: มี Component `PriceTicker` (PriceDisplay) ที่จำราคาเก่าไว้ หากราคาใหม่สูงกว่าเดิมตัวเลขจะกระพริบ **สีเขียวแบบเรืองแสง (Glow)** และหากต่ำกว่าจะกระพริบ **สีแดงแบบเรืองแสง**
+  - **Sync Controls**: มีระบบปุ่มเปิด/ปิดการดึงราคาแบบ Global และแยกตาม Category
+  - **Manual Mode**: เมื่อปิด Auto-sync ตัวเลขราคาจะเปลี่ยนเป็นช่อง Input ให้อัปเดตข้อมูลด้วยตัวเอง (กด Enter เพื่อ Save)
+  - **Force Sync**: ปุ่มกดให้ดึงข้อมูลทันที (ทำงานเบื้องหลัง) แบบแยกส่วน (All / Category / Asset)
+  - **Last Updated**: แสดงเวลาอัปเดตราคาล่าสุดทั้งระดับตลาด (Market) และแยกรายตัว (Asset)
 
 ## Folder Structure & Key Files
 - `src/lib/firebase.ts`: การตั้งค่า Firebase Client (Web Config)
@@ -25,3 +29,4 @@
 - [x] เชื่อมต่อ Firebase Web SDK สำเร็จ
 - [x] สร้างหน้า Dashboard แสดงผลราคาแยกตาม Market และทำ Animation สำเร็จ
 - [x] สร้างหน้า UI สำหรับ Asset Management เพื่อเรียกใช้ REST API ของ Go Backend (`/assets`)
+- [x] สร้างระบบเปิด/ปิดการ Sync, Manual Mode สำหรับอัปเดตราคา, และปุ่ม Force Sync ทันที
