@@ -45,7 +45,7 @@ export default function AssetsPage() {
   // Load tracked assets
   const fetchTrackedAssets = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/assets");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assets`);
       const data = await res.json();
       setTrackedAssets(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -57,7 +57,7 @@ export default function AssetsPage() {
   const fetchRefAssets = async (page: number, query: string, market: string) => {
     setLoading(true);
     try {
-      const url = `http://localhost:8080/api/reference-assets?type=${market}&page=${page}&limit=${limit}&q=${encodeURIComponent(query)}`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/reference-assets?type=${market}&page=${page}&limit=${limit}&q=${encodeURIComponent(query)}`;
       const res = await fetch(url);
       const result = await res.json();
       
@@ -115,7 +115,7 @@ export default function AssetsPage() {
       // Remove it
       if (!existingAsset.id) return;
       try {
-        const res = await fetch(`http://localhost:8080/api/assets/${existingAsset.id}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assets/${existingAsset.id}`, {
           method: "DELETE",
         });
         if (res.ok) {
@@ -129,7 +129,7 @@ export default function AssetsPage() {
       const mappedType = activeTab === "crypto" ? "crypto" : activeTab === "gold" ? "gold" : activeTab === "th" ? "th" : "usa";
       
       try {
-        const res = await fetch("http://localhost:8080/api/assets", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assets`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

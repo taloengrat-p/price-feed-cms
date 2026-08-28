@@ -24,9 +24,16 @@
 - `src/app/page.tsx`: หน้า Dashboard หลักที่มี UI ดึงข้อมูลราคา
 - `src/app/globals.css`: ไฟล์ CSS หลัก ที่มีการตั้งค่า Tailwind Theme ตัวแปรสี และ `@keyframes` สำหรับทำ Animation กระพริบ (`flash-green`, `flash-red`)
 
+## Environments (Dev/Prod)
+- **Configuration**: ใช้ฟีเจอร์ Environment Variables ของ Next.js
+- **Dev**: โหลดไฟล์ `.env.development` อัตโนมัติเมื่อรัน `npm run dev` (เชื่อมต่อ Firebase `wealth-sphere-app`)
+- **Prod**: โหลดไฟล์ `.env.production` อัตโนมัติเมื่อทำการ build และ start สำหรับ Production (เชื่อมต่อ Firebase `wealth-sphere-prod`)
+- **Firebase/API Setup**: การตั้งค่า Firebase Web SDK (รวมถึง `databaseURL` และค่าคอนฟิกอื่นๆ) รวมไปถึง `NEXT_PUBLIC_API_URL` จะถูกดึงมาจากไฟล์ `.env` ของแต่ละฝั่ง เพื่อสลับ Environment ได้อย่างปลอดภัย
+
 ## Current Status (Last Updated)
 - [x] Setup Next.js + Tailwind
 - [x] เชื่อมต่อ Firebase Web SDK สำเร็จ
 - [x] สร้างหน้า Dashboard แสดงผลราคาแยกตาม Market และทำ Animation สำเร็จ
 - [x] สร้างหน้า UI สำหรับ Asset Management เพื่อเรียกใช้ REST API ของ Go Backend (`/assets`)
 - [x] สร้างระบบเปิด/ปิดการ Sync, Manual Mode สำหรับอัปเดตราคา, และปุ่ม Force Sync ทันที
+- [x] แยก Environment (Dev/Prod) และใช้ `.env` แยกตาม Environment สำเร็จ

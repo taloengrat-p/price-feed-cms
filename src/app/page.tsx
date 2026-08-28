@@ -160,7 +160,7 @@ export default function Dashboard() {
 
   const loadToggles = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/settings/sync-toggles");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/sync-toggles`);
       if (res.ok) {
         setBackendConnected(true);
         const resData = await res.json();
@@ -182,7 +182,7 @@ export default function Dashboard() {
       loadToggles();
     }, 10000);
 
-    fetch("http://localhost:8080/api/settings/sync-interval")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/sync-interval`)
       .then(res => res.json())
       .then(resData => {
         if(resData.interval_minutes) setSyncInterval(parseInt(resData.interval_minutes));
@@ -222,7 +222,7 @@ export default function Dashboard() {
   const handleUpdateSyncInterval = async (minutes: number) => {
     setIsUpdatingSync(true);
     try {
-      await fetch("http://localhost:8080/api/settings/sync-interval", {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/sync-interval`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ interval_minutes: minutes }),
@@ -236,7 +236,7 @@ export default function Dashboard() {
 
   const toggleSync = async (key: string, value: boolean) => {
     try {
-      await fetch("http://localhost:8080/api/settings/sync-toggle", {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/sync-toggle`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key, value }),
@@ -248,7 +248,7 @@ export default function Dashboard() {
   };
 
   const forceSync = async (type?: string, symbol?: string) => {
-    let url = "http://localhost:8080/api/sync";
+    let url = `${process.env.NEXT_PUBLIC_API_URL}/api/sync`;
     const params = new URLSearchParams();
     if (type) params.append("type", type);
     if (symbol) params.append("symbol", symbol);
@@ -268,7 +268,7 @@ export default function Dashboard() {
 
   const handleManualSave = async (market: string, symbol: string, price: number) => {
     try {
-      await fetch(`http://localhost:8080/api/mock-price/${market}/${symbol}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/mock-price/${market}/${symbol}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ price }),

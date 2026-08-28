@@ -33,7 +33,7 @@ export const SymbolAvatar = ({ symbol, size = 40 }: { symbol: string, size?: num
     >
       {!imgError ? (
         <img 
-          src={`http://localhost:8080/api/logo/${encodeURIComponent(symbol)}`} 
+          src={`${process.env.NEXT_PUBLIC_API_URL}/api/logo/${encodeURIComponent(symbol)}`} 
           alt={symbol}
           onError={() => setImgError(true)}
           className="w-full h-full object-cover bg-white"
