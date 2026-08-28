@@ -3,41 +3,88 @@
 import { useEffect, useState, useRef } from "react";
 import { db } from "@/lib/firebase";
 import { ref, onValue } from "firebase/database";
-import { Activity, DollarSign, Server, Clock, Settings, RefreshCw, Power, Wifi, WifiOff } from "lucide-react";
+import { Activity, DollarSign, Server, Clock, Settings, RefreshCw, Power, Wifi, WifiOff, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { SymbolAvatar } from "@/components/SymbolAvatar";
 
 type AssetData = {
   marketPrice: number;
+  percentChange?: number;
   name: string;
   updatedAt?: string;
+  extendedPrice?: number;
+  extendedPercentChange?: number;
+  isMarketOpen?: boolean;
 };
 
 type MarketData = Record<string, AssetData>;
 type PriceFeedData = Record<string, MarketData>;
 
 function PriceDisplay({ 
-  price, 
+  price = 0, 
   symbol, 
   isManualMode,
   onSave
 }: { 
-  price: number; 
+  price?: number; 
   symbol: string;
   isManualMode: boolean;
   onSave: (p: number) => void;
 }) {
   const prevPriceRef = useRef<number>(price);
+  const [displayPrice, setDisplayPrice] = useState(price);
   const [flashClass, setFlashClass] = useState("text-slate-300");
   const [inputValue, setInputValue] = useState(price.toString());
   const [isFocused, setIsFocused] = useState(false);
   
+  const animationRef = useRef<number | null>(null);
+
   useEffect(() => {
+    if (price === prevPriceRef.current) return;
+
     if (price > prevPriceRef.current) {
       setFlashClass("price-flash-up");
-    } else if (price < prevPriceRef.current) {
+    } else {
       setFlashClass("price-flash-down");
     }
+
+    const startPrice = prevPriceRef.current;
+    const endPrice = price;
+    const duration = 800; // 800ms animation
+    let startTime: number | null = null;
+
+    const animate = (time: number) => {
+      if (!startTime) startTime = time;
+      const progress = Math.min((time - startTime) / duration, 1);
+      
+      // easeOutExpo easing function for natural slow-down at the end
+      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      
+      const current = startPrice + (endPrice - startPrice) * easeProgress;
+      setDisplayPrice(current);
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        setDisplayPrice(endPrice);
+      }
+    };
+
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    animationRef.current = requestAnimationFrame(animate);
+
     prevPriceRef.current = price;
+
+    // Reset flash class after 1s
+    const timeout = setTimeout(() => setFlashClass("text-slate-300"), 1000);
+    
+    return () => {
+      clearTimeout(timeout);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [price]);
+
+  useEffect(() => {
     if (!isFocused) {
       setInputValue(price.toString());
     }
@@ -71,10 +118,10 @@ function PriceDisplay({
 
   return (
     <span 
-      key={`${symbol}-${price}`}
-      className={`text-4xl font-extrabold tracking-tight inline-block ${flashClass}`}
+      key={`${symbol}`} // Removed price from key to prevent re-mounting which stops animation
+      className={`text-4xl font-extrabold tracking-tight inline-block transition-colors duration-300 ${flashClass}`}
     >
-      {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+      {displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
     </span>
   );
 }
@@ -101,6 +148,7 @@ export default function Dashboard() {
   
   const [syncInterval, setSyncInterval] = useState<number>(60);
   const [isUpdatingSync, setIsUpdatingSync] = useState(false);
+  const [activeSync, setActiveSync] = useState<string | null>(null);
   
   const [firebaseConnected, setFirebaseConnected] = useState(false);
   const [backendConnected, setBackendConnected] = useState(false);
@@ -206,10 +254,15 @@ export default function Dashboard() {
     if (symbol) params.append("symbol", symbol);
     if (params.toString()) url += "?" + params.toString();
 
+    const syncTarget = symbol ? `asset_${symbol}` : type ? `market_${type}` : "global";
+    setActiveSync(syncTarget);
+    
     try {
       await fetch(url, { method: "POST" });
     } catch (error) {
       console.error("Failed to force sync", error);
+    } finally {
+      setActiveSync(null);
     }
   };
 
@@ -267,10 +320,11 @@ export default function Dashboard() {
             
             <button
               onClick={() => forceSync()}
-              className="glass-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-blue-600/20 hover:text-blue-400 transition-colors text-slate-300 text-sm font-medium cursor-pointer"
+              disabled={activeSync !== null}
+              className={`glass-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-blue-600/20 hover:text-blue-400 transition-colors text-slate-300 text-sm font-medium ${activeSync === null ? 'cursor-pointer' : 'cursor-wait opacity-70'}`}
               title="Force fetch all active assets"
             >
-              <RefreshCw size={16} />
+              <RefreshCw size={16} className={activeSync === "global" ? "animate-spin text-blue-400" : ""} />
               Sync All
             </button>
 
@@ -337,11 +391,18 @@ export default function Dashboard() {
                         </button>
                         <button
                           onClick={() => forceSync(market)}
-                          className="p-1.5 rounded hover:bg-blue-500/20 text-slate-400 hover:text-blue-400 transition-colors cursor-pointer"
+                          disabled={activeSync !== null}
+                          className={`p-1.5 rounded hover:bg-blue-500/20 text-slate-400 hover:text-blue-400 transition-colors ${activeSync === null ? 'cursor-pointer' : 'cursor-wait'}`}
                           title={`Force sync all ${market}`}
                         >
-                          <RefreshCw size={14} />
+                          <RefreshCw size={14} className={activeSync === `market_${market}` ? "animate-spin text-blue-400" : ""} />
                         </button>
+                        <Link 
+                          href={`/market/${market}`}
+                          className="ml-2 flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors"
+                        >
+                          View Details <ArrowRight size={14} />
+                        </Link>
                       </div>
                     </div>
 
@@ -352,41 +413,80 @@ export default function Dashboard() {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {Object.entries(assets).map(([symbol, assetData]) => (
+                    {Object.entries(assets)
+                      .slice(0, 8) // Limit to top 8 for dashboard (TODO: Sort by Market Cap when available)
+                      .map(([symbol, assetData]) => {
+                      const pctChange = assetData.percentChange || 0;
+                      const isPositive = pctChange >= 0;
+                      
+                      // Heatmap color logic
+                      let heatClass = "bg-slate-800/30 border-slate-700/50 hover:border-slate-600";
+                      let textClass = "text-slate-400";
+                      let pillClass = "bg-slate-800 text-slate-400";
+                      
+                      if (assetData.percentChange !== undefined) {
+                        if (pctChange > 0) {
+                          heatClass = "bg-emerald-950/40 border-emerald-900/50 hover:border-emerald-700/50";
+                          textClass = "text-emerald-400";
+                          pillClass = "bg-emerald-500/20 text-emerald-400";
+                        } else if (pctChange < 0) {
+                          heatClass = "bg-red-950/40 border-red-900/50 hover:border-red-700/50";
+                          textClass = "text-red-400";
+                          pillClass = "bg-red-500/20 text-red-400";
+                        }
+                      }
+
+                      return (
                       <div 
                         key={symbol} 
-                        className={`glass-panel rounded-2xl p-6 transition-all duration-300 border border-slate-700/50 hover:border-slate-600 bg-slate-800/30 group ${isManualMode ? 'ring-1 ring-emerald-500/30' : ''}`}
+                        className={`rounded-2xl p-6 transition-all duration-300 border backdrop-blur-sm group ${heatClass} ${isManualMode ? 'ring-1 ring-blue-500/30' : ''}`}
                       >
                         <div className="flex justify-between items-start mb-4">
                           <div>
-                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{market}</p>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-xl font-bold text-white">{symbol}</h3>
-                              <button
-                                onClick={() => forceSync(undefined, symbol)}
-                                className="p-1.5 rounded-md bg-slate-800 text-slate-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-500/20 hover:text-blue-400 cursor-pointer"
-                                title={`Force sync ${symbol}`}
-                              >
-                                <RefreshCw size={12} />
-                              </button>
+                            <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${textClass} opacity-80`}>{market}</p>
+                            <div className="flex items-center gap-3">
+                              <SymbolAvatar symbol={symbol} size={36} />
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-xl font-bold text-white">{symbol}</h3>
+                                <button
+                                  onClick={() => forceSync(undefined, symbol)}
+                                  disabled={activeSync !== null}
+                                  className={`p-1.5 rounded-md bg-black/20 text-slate-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-white/10 hover:text-white ${activeSync === null ? 'cursor-pointer' : 'cursor-wait'}`}
+                                  title={`Force sync ${symbol}`}
+                                >
+                                  <RefreshCw size={12} className={activeSync === `asset_${symbol}` ? "animate-spin text-white" : ""} />
+                                </button>
+                              </div>
                             </div>
                           </div>
-                          <div className="bg-slate-800/80 p-2 rounded-lg">
-                            <DollarSign className="w-5 h-5 text-slate-400" />
+                          <div className={`px-2 py-1 rounded text-sm font-bold ${pillClass}`}>
+                            {pctChange > 0 ? '+' : ''}{pctChange.toFixed(2)}%
                           </div>
                         </div>
                         
                         <div className="mt-4">
-                          <p className="text-slate-400 text-sm mb-2">{assetData.name || "Unknown Asset"}</p>
+                          <p className="text-slate-300/70 text-sm mb-2 truncate" title={assetData.name}>{assetData.name || "Unknown Asset"}</p>
                           <div className="flex items-baseline gap-2">
                             <span className="text-xl text-slate-500">$</span>
                             <PriceDisplay 
-                              price={assetData.marketPrice} 
+                              price={assetData.marketPrice || 0} 
                               symbol={symbol}
                               isManualMode={isManualMode}
                               onSave={(newPrice) => handleManualSave(market, symbol, newPrice)}
                             />
                           </div>
+
+                          {market === "usa" && assetData.extendedPrice ? (
+                            <div className="mt-3 bg-slate-900/50 rounded-lg p-2.5 text-xs flex justify-between items-center border border-slate-700/50">
+                              <span className="text-orange-400 font-medium">Pre/Post Market</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-200 font-bold">${assetData.extendedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span className={assetData.extendedPercentChange == 0 ? "text-gray-400 font-bold" : assetData.extendedPercentChange && assetData.extendedPercentChange >= 0 ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
+                                  {assetData.extendedPercentChange && assetData.extendedPercentChange > 0 ? "+" : ""}{assetData.extendedPercentChange?.toFixed(2)}%
+                                </span>
+                              </div>
+                            </div>
+                          ) : null}
                           
                           <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-500">
                             <Clock size={12} />
@@ -396,11 +496,11 @@ export default function Dashboard() {
                               }).format(new Date(assetData.updatedAt)) : "Unknown time"}
                           </div>
                           {isManualMode && (
-                            <p className="text-xs text-emerald-500/70 mt-2 font-medium">✏️ Manual mode active. Press Enter to save.</p>
+                            <p className="text-xs text-blue-400/70 mt-2 font-medium">✏️ Manual mode active. Press Enter to save.</p>
                           )}
                         </div>
                       </div>
-                    ))}
+                    )})}
                   </div>
                 </div>
               );

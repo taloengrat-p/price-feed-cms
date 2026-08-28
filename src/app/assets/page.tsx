@@ -1,197 +1,293 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, Trash2, RefreshCw } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, Activity, ArrowLeft, ChevronLeft, ChevronRight, CheckSquare, Square } from "lucide-react";
+import Link from "next/link";
+import { SymbolAvatar } from "@/components/SymbolAvatar";
 
 type Asset = {
-  id: number;
+  id?: number;
   symbol: string;
   name: string;
-  type: string; // Market
-  is_active: boolean;
+  type: string;
+  price: number;
 };
 
-export default function AssetsPage() {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Form State
-  const [symbol, setSymbol] = useState("");
-  const [name, setName] = useState("");
-  const [type, setType] = useState("usa");
-  const [price, setPrice] = useState("");
+type ReferenceAsset = {
+  symbol: string;
+  name: string;
+  type: string;
+  exchange: string;
+  country: string;
+};
 
-  const fetchAssets = async () => {
-    setLoading(true);
+const MARKET_TABS = [
+  { id: "usa", name: "USA Stocks" },
+  { id: "th", name: "Thai Stocks" },
+  { id: "crypto", name: "Crypto" },
+  { id: "gold", name: "Forex & Gold" }
+];
+
+export default function AssetsPage() {
+  const [activeTab, setActiveTab] = useState("usa");
+  const [trackedAssets, setTrackedAssets] = useState<Asset[]>([]);
+  
+  const [refAssets, setRefAssets] = useState<ReferenceAsset[]>([]);
+  const [totalRefAssets, setTotalRefAssets] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 20;
+
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load tracked assets
+  const fetchTrackedAssets = async () => {
     try {
       const res = await fetch("http://localhost:8080/api/assets");
       const data = await res.json();
-      setAssets(Array.isArray(data) ? data : []);
+      setTrackedAssets(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Failed to fetch assets", error);
+      console.error("Failed to fetch tracked assets", error);
     }
-    setLoading(false);
+  };
+
+  // Load reference assets with pagination and search
+  const fetchRefAssets = async (page: number, query: string, market: string) => {
+    setLoading(true);
+    try {
+      const url = `http://localhost:8080/api/reference-assets?type=${market}&page=${page}&limit=${limit}&q=${encodeURIComponent(query)}`;
+      const res = await fetch(url);
+      const result = await res.json();
+      
+      // Handle the new paginated API format
+      if (result.data) {
+        setRefAssets(result.data || []);
+        setTotalRefAssets(result.total || 0);
+        setTotalPages(result.totalPages || 1);
+        setCurrentPage(result.page || 1);
+      } else {
+        // Fallback if API hasn't been updated yet or returned an array directly
+        setRefAssets(Array.isArray(result) ? result : []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch reference assets", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchAssets();
+    fetchTrackedAssets();
   }, []);
 
-  const handleAddAsset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await fetch("http://localhost:8080/api/assets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          symbol, 
-          name, 
-          type, 
-          is_active: true,
-          price: price ? parseFloat(price) : 0 
-        }),
-      });
-      setSymbol("");
-      setName("");
-      setPrice("");
-      fetchAssets();
-    } catch (error) {
-      console.error("Failed to add asset", error);
+  useEffect(() => {
+    fetchRefAssets(currentPage, search, activeTab);
+  }, [currentPage, activeTab]);
+
+  // Handle search with debounce
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearch(val);
+    
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      setCurrentPage(1); // Reset to page 1 on new search
+      fetchRefAssets(1, val, activeTab);
+    }, 500);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this asset?")) return;
-    try {
-      await fetch(`http://localhost:8080/api/assets/${id}`, { method: "DELETE" });
-      fetchAssets();
-    } catch (error) {
-      console.error("Failed to delete asset", error);
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    setSearch("");
+    setCurrentPage(1);
+  };
+
+  // Toggle Tracking Status
+  const toggleTracking = async (refAsset: ReferenceAsset) => {
+    const existingAsset = trackedAssets.find(a => a.symbol === refAsset.symbol);
+    
+    if (existingAsset) {
+      // Remove it
+      if (!existingAsset.id) return;
+      try {
+        const res = await fetch(`http://localhost:8080/api/assets/${existingAsset.id}`, {
+          method: "DELETE",
+        });
+        if (res.ok) {
+          setTrackedAssets(prev => prev.filter(a => a.id !== existingAsset.id));
+        }
+      } catch (error) {
+        console.error("Failed to remove asset", error);
+      }
+    } else {
+      // Add it
+      const mappedType = activeTab === "crypto" ? "crypto" : activeTab === "gold" ? "gold" : activeTab === "th" ? "th" : "usa";
+      
+      try {
+        const res = await fetch("http://localhost:8080/api/assets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            symbol: refAsset.symbol,
+            name: refAsset.name,
+            type: mappedType,
+            price: 0
+          }),
+        });
+        
+        if (res.ok) {
+          const newAsset = await res.json();
+          setTrackedAssets(prev => [...prev, newAsset]);
+        }
+      } catch (error) {
+        console.error("Failed to add asset", error);
+      }
     }
   };
 
   return (
-    <main className="p-8 md:p-12 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Asset Management</h1>
-          <p className="text-slate-400">Add or remove assets to track in your price feed.</p>
-        </div>
-        <button onClick={fetchAssets} className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full transition-colors">
-          <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
-        </button>
-      </div>
+    <main className="min-h-screen p-8 md:p-12 lg:p-24 bg-slate-950 text-slate-200">
+      <div className="max-w-5xl mx-auto">
+        <header className="mb-10">
+          <Link href="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-4">
+            <ArrowLeft size={16} /> Back to Dashboard
+          </Link>
+          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
+            <Activity className="text-blue-500" size={36} /> 
+            Management Assets
+          </h1>
+          <p className="text-slate-400">Select which market assets you want to track on your dashboard.</p>
+        </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Form Panel */}
-        <div className="lg:col-span-1">
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-900/50">
-            <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-              <Plus className="text-blue-400" /> Add New Asset
-            </h2>
-            <form onSubmit={handleAddAsset} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Market (Type)</label>
-                <select 
-                  value={type} 
-                  onChange={(e) => setType(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                  <option value="usa">USA (Stock)</option>
-                  <option value="th">TH (Stock)</option>
-                  <option value="crypto">Crypto</option>
-                  <option value="GOLD">Gold</option>
-                  <option value="cash">Cash/Forex</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Symbol</label>
-                <input 
-                  type="text" 
-                  required
-                  placeholder="e.g., AAPL"
-                  value={symbol}
-                  onChange={(e) => setSymbol(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none uppercase"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Name / Description</label>
-                <input 
-                  type="text" 
-                  required
-                  placeholder="e.g., Apple Inc."
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Initial Price (Optional)</label>
-                <input 
-                  type="number" 
-                  step="any"
-                  placeholder="e.g., 150.50"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <button 
-                type="submit" 
-                className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-lg transition-colors flex justify-center items-center gap-2 shadow-lg shadow-blue-500/20"
-              >
-                <Plus size={18} /> Save Asset
-              </button>
-            </form>
-          </div>
+        {/* Tabs */}
+        <div className="flex space-x-1 bg-slate-900/50 p-1 rounded-xl mb-6 overflow-x-auto">
+          {MARKET_TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex-1 min-w-[120px] py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                activeTab === tab.id 
+                  ? "bg-blue-600 text-white shadow-lg" 
+                  : "text-slate-400 hover:text-white hover:bg-slate-800"
+              }`}
+            >
+              {tab.name}
+            </button>
+          ))}
         </div>
 
-        {/* Table Panel */}
-        <div className="lg:col-span-2">
-          <div className="glass-panel rounded-2xl border border-slate-800 bg-slate-900/50 overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-950/50 border-b border-slate-800">
-                  <th className="p-4 text-sm font-medium text-slate-400">Market</th>
-                  <th className="p-4 text-sm font-medium text-slate-400">Symbol</th>
-                  <th className="p-4 text-sm font-medium text-slate-400">Name</th>
-                  <th className="p-4 text-sm font-medium text-slate-400 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/50">
-                {loading && assets.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="p-8 text-center text-slate-500">Loading assets...</td>
-                  </tr>
-                ) : assets.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="p-8 text-center text-slate-500">No assets found in database.</td>
-                  </tr>
-                ) : (
-                  assets.map((asset) => (
-                    <tr key={asset.id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="p-4">
-                        <span className="bg-slate-800 text-slate-300 text-xs px-2 py-1 rounded uppercase tracking-wider">
-                          {asset.type}
-                        </span>
-                      </td>
-                      <td className="p-4 font-bold text-white">{asset.symbol}</td>
-                      <td className="p-4 text-slate-400">{asset.name}</td>
-                      <td className="p-4 text-right">
-                        <button 
-                          onClick={() => handleDelete(asset.id)}
-                          className="text-slate-500 hover:text-red-400 p-2 rounded-lg hover:bg-red-400/10 transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
+        {/* Search */}
+        <div className="relative mb-6">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+          <input 
+            type="text" 
+            placeholder={`Search ${MARKET_TABS.find(t => t.id === activeTab)?.name} symbols...`}
+            value={search}
+            onChange={handleSearchChange}
+            className="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl pl-12 pr-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-600"
+          />
+        </div>
+
+        {/* Table Area */}
+        <div className="bg-slate-900/30 rounded-2xl border border-slate-800/80 overflow-hidden">
+          {loading && refAssets.length === 0 ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-900/80 border-b border-slate-700/50">
+                      <th className="p-4 w-16 text-center text-sm font-semibold text-slate-300">Track</th>
+                      <th className="p-4 text-sm font-semibold text-slate-300">Symbol</th>
+                      <th className="p-4 text-sm font-semibold text-slate-300">Name</th>
+                      <th className="p-4 text-sm font-semibold text-slate-300">Exchange</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {refAssets.map((refAsset) => {
+                      const isTracked = trackedAssets.some(a => a.symbol === refAsset.symbol);
+                      
+                      return (
+                        <tr 
+                          key={refAsset.symbol} 
+                          className={`transition-colors cursor-pointer ${isTracked ? 'bg-blue-900/10 hover:bg-blue-900/20' : 'hover:bg-slate-800/50'}`}
+                          onClick={() => toggleTracking(refAsset)}
+                        >
+                          <td className="p-4 text-center">
+                            <button 
+                              className={`p-1 rounded transition-colors ${isTracked ? 'text-blue-400 hover:text-blue-300' : 'text-slate-500 hover:text-slate-300'}`}
+                            >
+                              {isTracked ? <CheckSquare size={20} /> : <Square size={20} />}
+                            </button>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <SymbolAvatar symbol={refAsset.symbol} size={32} />
+                              <div className="font-bold text-white text-base">{refAsset.symbol}</div>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="text-sm text-slate-300">{refAsset.name}</div>
+                          </td>
+                          <td className="p-4">
+                            <div className="text-xs font-mono text-slate-500 bg-slate-800/50 inline-block px-2 py-1 rounded">
+                              {refAsset.exchange || 'N/A'}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    
+                    {refAssets.length === 0 && !loading && (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-slate-500">
+                          No assets found matching your criteria.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-6 py-4 bg-slate-900/80 border-t border-slate-700/50">
+                  <div className="text-sm text-slate-400">
+                    Showing <span className="font-medium text-white">{refAssets.length}</span> of <span className="font-medium text-white">{totalRefAssets}</span> results
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1 || loading}
+                      className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                    
+                    <div className="flex items-center px-4 rounded-lg bg-slate-800 text-sm font-medium">
+                      Page {currentPage} of {totalPages}
+                    </div>
+                    
+                    <button 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages || loading}
+                      className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </main>
