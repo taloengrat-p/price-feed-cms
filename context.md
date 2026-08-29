@@ -30,6 +30,9 @@
 - **Prod**: โหลดไฟล์ `.env.production` อัตโนมัติเมื่อทำการ build และ start สำหรับ Production (เชื่อมต่อ Firebase `wealth-sphere-prod`)
 - **Firebase/API Setup**: การตั้งค่า Firebase Web SDK (รวมถึง `databaseURL` และค่าคอนฟิกอื่นๆ) รวมไปถึง `NEXT_PUBLIC_API_URL` จะถูกดึงมาจากไฟล์ `.env` ของแต่ละฝั่ง เพื่อสลับ Environment ได้อย่างปลอดภัย
 
+## Development & Debugging
+- **VS Code Debugging**: มีไฟล์ `.vscode/launch.json` เตรียมไว้สำหรับการทำ Debug ทั้งฝั่ง Server-side (API/SSR), Client-side (Browser), และ Full-stack ช่วยให้สามารถวาง Breakpoint และตรวจสอบค่าตัวแปรระหว่างรัน `npm run dev` ได้สะดวกผ่านแถบ Run and Debug ใน VS Code
+
 ## Current Status (Last Updated)
 - [x] Setup Next.js + Tailwind
 - [x] เชื่อมต่อ Firebase Web SDK สำเร็จ
