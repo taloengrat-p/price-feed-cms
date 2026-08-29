@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Users, Search, Filter } from "lucide-react";
 
 interface SubscriptionStat {
@@ -12,6 +13,7 @@ interface SubscriptionStat {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export default function SubscriptionsPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<SubscriptionStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [marketFilter, setMarketFilter] = useState("all");
@@ -121,7 +123,8 @@ export default function SubscriptionsPage() {
                 stats.map((stat, i) => (
                   <tr
                     key={`${stat.market}-${stat.symbol}`}
-                    className="border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors group"
+                    className="border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors group cursor-pointer"
+                    onClick={() => router.push(`/asset/${stat.market}/${stat.symbol}`)}
                   >
                     <td className="p-4">
                       <div className="font-bold text-white text-lg">{stat.symbol}</div>

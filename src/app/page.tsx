@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { ref, onValue } from "firebase/database";
 import { Activity, DollarSign, Server, Clock, Settings, RefreshCw, Power, Wifi, WifiOff, ArrowRight } from "lucide-react";
@@ -143,6 +144,7 @@ const getMarketLastUpdate = (assets: MarketData) => {
 };
 
 export default function Dashboard() {
+  const router = useRouter();
   const [data, setData] = useState<PriceFeedData | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -439,7 +441,8 @@ export default function Dashboard() {
                       return (
                       <div 
                         key={symbol} 
-                        className={`rounded-2xl p-6 transition-all duration-300 border backdrop-blur-sm group ${heatClass} ${isManualMode ? 'ring-1 ring-blue-500/30' : ''}`}
+                        onClick={() => router.push(`/asset/${market}/${symbol}`)}
+                        className={`rounded-2xl p-6 transition-all duration-300 border backdrop-blur-sm group cursor-pointer hover:scale-[1.02] ${heatClass} ${isManualMode ? 'ring-1 ring-blue-500/30' : ''}`}
                       >
                         <div className="flex justify-between items-start mb-4">
                           <div>
@@ -449,7 +452,7 @@ export default function Dashboard() {
                               <div className="flex items-center gap-2">
                                 <h3 className="text-xl font-bold text-white">{symbol}</h3>
                                 <button
-                                  onClick={() => forceSync(undefined, symbol)}
+                                  onClick={(e) => { e.stopPropagation(); forceSync(undefined, symbol); }}
                                   disabled={activeSync !== null}
                                   className={`p-1.5 rounded-md bg-black/20 text-slate-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-white/10 hover:text-white ${activeSync === null ? 'cursor-pointer' : 'cursor-wait'}`}
                                   title={`Force sync ${symbol}`}

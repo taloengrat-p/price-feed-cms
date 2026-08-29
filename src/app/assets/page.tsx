@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Search, Activity, ArrowLeft, ChevronLeft, ChevronRight, CheckSquare, Square, RefreshCw, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SymbolAvatar } from "@/components/SymbolAvatar";
 
@@ -31,6 +32,7 @@ const MARKET_TABS = [
 ];
 
 export default function AssetsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("usa");
   const [statusFilter, setStatusFilter] = useState("all");
   const [trackedAssets, setTrackedAssets] = useState<Asset[]>([]);
@@ -318,15 +320,17 @@ export default function AssetsPage() {
                       return (
                         <tr 
                           key={refAsset.symbol} 
-                          className={`transition-colors cursor-pointer ${isTracked ? 'bg-blue-900/10 hover:bg-blue-900/20' : 'hover:bg-slate-800/50'}`}
-                          onClick={() => toggleTracking(refAsset)}
+                          className={`transition-colors cursor-pointer group ${isTracked ? 'bg-blue-900/10 hover:bg-blue-900/20' : 'hover:bg-slate-800/50'}`}
+                          onClick={() => router.push(`/asset/${activeTab}/${refAsset.symbol}`)}
                         >
-                          <td className="p-4 text-center">
-                            <button 
-                              className={`p-1 rounded transition-colors ${isTracked ? 'text-blue-400 hover:text-blue-300' : 'text-slate-500 hover:text-slate-300'}`}
-                            >
-                              {isTracked ? <CheckSquare size={20} /> : <Square size={20} />}
-                            </button>
+                          <td className="p-4 text-center" onClick={(e) => { e.stopPropagation(); toggleTracking(refAsset); }}>
+                            <div className="flex justify-center items-center h-full w-full">
+                              {isTracked ? (
+                                <CheckSquare className="text-blue-500 cursor-pointer" size={20} />
+                              ) : (
+                                <Square className="text-slate-500 cursor-pointer hover:text-slate-300" size={20} />
+                              )}
+                            </div>
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-3">
