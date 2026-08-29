@@ -39,6 +39,9 @@ export default function RootLayout({
               <Link href="/assets" className="flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800 px-3 py-2 rounded-lg transition-all">
                 <Database size={18} /> Manage Assets
               </Link>
+              <Link href="/subscriptions" className="flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800 px-3 py-2 rounded-lg transition-all">
+                <Activity size={18} /> User Subscriptions
+              </Link>
             </div>
           </div>
         </nav>
