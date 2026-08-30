@@ -6,6 +6,7 @@ import { ref, onValue } from "firebase/database";
 import { ArrowLeft, ArrowUpDown, Server, Search } from "lucide-react";
 import Link from "next/link";
 import { SymbolAvatar } from "@/components/SymbolAvatar";
+import { getPrePostLabel } from "@/lib/market-utils";
 
 type AssetData = {
   marketPrice: number;
@@ -178,12 +179,18 @@ export default function MarketDetailPage(props: { params: Promise<{ market: stri
                         {market === 'usa' && (
                           <td className="p-4 text-right">
                             {assetData.extendedPrice ? (
-                              <div>
-                                <div className="font-mono text-sm text-slate-300">${assetData.extendedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                                <div className={`text-xs ${assetData.extendedPercentChange && assetData.extendedPercentChange >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                                  {assetData.extendedPercentChange && assetData.extendedPercentChange > 0 ? "+" : ""}{assetData.extendedPercentChange?.toFixed(2)}%
-                                </div>
-                              </div>
+                              (() => {
+                                const prePost = getPrePostLabel(assetData.updatedAt);
+                                return (
+                                  <div>
+                                    <div className={`text-xs ${prePost.colorClass} font-medium mb-0.5`}>{prePost.label}</div>
+                                    <div className="font-mono text-sm text-slate-300">${assetData.extendedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                    <div className={`text-xs ${assetData.extendedPercentChange && assetData.extendedPercentChange >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                                      {assetData.extendedPercentChange && assetData.extendedPercentChange > 0 ? "+" : ""}{assetData.extendedPercentChange?.toFixed(2)}%
+                                    </div>
+                                  </div>
+                                );
+                              })()
                             ) : (
                               <span className="text-slate-600 text-sm">-</span>
                             )}

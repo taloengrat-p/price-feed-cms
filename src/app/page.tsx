@@ -7,6 +7,7 @@ import { ref, onValue } from "firebase/database";
 import { Activity, DollarSign, Server, Clock, Settings, RefreshCw, Power, Wifi, WifiOff, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { SymbolAvatar } from "@/components/SymbolAvatar";
+import { getPrePostLabel } from "@/lib/market-utils";
 
 type AssetData = {
   marketPrice: number;
@@ -480,15 +481,20 @@ export default function Dashboard() {
                           </div>
 
                           {market === "usa" && assetData.extendedPrice ? (
-                            <div className="mt-3 bg-slate-900/50 rounded-lg p-2.5 text-xs flex justify-between items-center border border-slate-700/50">
-                              <span className="text-orange-400 font-medium">Pre/Post Market</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-slate-200 font-bold">${assetData.extendedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span className={assetData.extendedPercentChange == 0 ? "text-gray-400 font-bold" : assetData.extendedPercentChange && assetData.extendedPercentChange >= 0 ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
-                                  {assetData.extendedPercentChange && assetData.extendedPercentChange > 0 ? "+" : ""}{assetData.extendedPercentChange?.toFixed(2)}%
-                                </span>
-                              </div>
-                            </div>
+                            (() => {
+                              const prePost = getPrePostLabel(assetData.updatedAt);
+                              return (
+                                <div className="mt-3 bg-slate-900/50 rounded-lg p-2.5 text-xs flex justify-between items-center border border-slate-700/50">
+                                  <span className={`${prePost.colorClass} font-medium`}>{prePost.label}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-slate-200 font-bold">${assetData.extendedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span className={assetData.extendedPercentChange == 0 ? "text-gray-400 font-bold" : assetData.extendedPercentChange && assetData.extendedPercentChange >= 0 ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
+                                      {assetData.extendedPercentChange && assetData.extendedPercentChange > 0 ? "+" : ""}{assetData.extendedPercentChange?.toFixed(2)}%
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })()
                           ) : null}
                           
                           <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-500">

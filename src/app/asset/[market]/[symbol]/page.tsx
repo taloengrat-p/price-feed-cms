@@ -7,6 +7,7 @@ import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { ref, onValue } from "firebase/database";
 import { SymbolAvatar } from "@/components/SymbolAvatar";
+import { getPrePostLabel } from "@/lib/market-utils";
 
 type AssetDetail = {
   symbol: string;
@@ -198,6 +199,20 @@ export default function AssetDetailPage() {
                       {isPositive ? '+' : ''}{pctChange.toFixed(2)}%
                     </span>
                   </div>
+                  {firebaseData.extendedPrice ? (
+                    (() => {
+                      const prePost = getPrePostLabel(firebaseData.updatedAt);
+                      return (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className={`${prePost.colorClass} font-medium`}>{prePost.label}</span>
+                          <span className="text-slate-200 font-bold">${firebaseData.extendedPrice.toLocaleString()}</span>
+                          <span className={firebaseData.extendedPercent == 0 ? "text-gray-400 font-bold" : firebaseData.extendedPercent && firebaseData.extendedPercent >= 0 ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
+                            {firebaseData.extendedPercent && firebaseData.extendedPercent > 0 ? "+" : ""}{firebaseData.extendedPercent?.toFixed(2)}%
+                          </span>
+                        </div>
+                      );
+                    })()
+                  ) : null}
                   <p className="text-slate-500 text-sm flex items-center gap-2 mt-4">
                     <RefreshCw size={14} /> Last updated: {firebaseData.updatedAt || 'Unknown'}
                   </p>
