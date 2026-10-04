@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
+import { AdminGate } from "@/components/AdminGate";
 import { Activity, LayoutDashboard, Database } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="bg-slate-950 text-slate-200 antialiased min-h-screen flex flex-col">
+        <AdminGate>
         <nav className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2 text-blue-400 font-extrabold text-xl tracking-tight">
@@ -48,6 +50,7 @@ export default function RootLayout({
         <div className="flex-1">
           {children}
         </div>
+        </AdminGate>
       </body>
     </html>
   );

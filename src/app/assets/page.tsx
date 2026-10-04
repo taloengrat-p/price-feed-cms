@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, Activity, ArrowLeft, ChevronLeft, ChevronRight, CheckSquare, Square, RefreshCw, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { adminFetch } from "@/lib/admin-api";
 import Link from "next/link";
 import { SymbolAvatar } from "@/components/SymbolAvatar";
 
@@ -55,7 +56,7 @@ export default function AssetsPage() {
   // Load tracked assets
   const fetchTrackedAssets = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assets`);
+      const res = await adminFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assets`);
       const data = await res.json();
       setTrackedAssets(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -68,7 +69,7 @@ export default function AssetsPage() {
     setLoading(true);
     try {
       const url = `${process.env.NEXT_PUBLIC_API_URL}/api/reference-assets?type=${market}&page=${page}&limit=${limit}&q=${encodeURIComponent(query)}&status=${status}`;
-      const res = await fetch(url);
+      const res = await adminFetch(url);
       const result = await res.json();
       
       // Handle the new paginated API format
@@ -90,7 +91,7 @@ export default function AssetsPage() {
 
   const fetchSyncStatuses = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sync-reference-status`);
+      const res = await adminFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sync-reference-status`);
       if (res.ok) {
         const data = await res.json();
         setSyncStatuses(data);
@@ -142,7 +143,7 @@ export default function AssetsPage() {
     setSyncSuccess(null);
     
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sync-reference?type=${activeTab}`, {
+      const res = await adminFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sync-reference?type=${activeTab}`, {
         method: "POST"
       });
       
@@ -177,7 +178,7 @@ export default function AssetsPage() {
       // Remove it
       if (!existingAsset.id) return;
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assets/${existingAsset.id}`, {
+        const res = await adminFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assets/${existingAsset.id}`, {
           method: "DELETE",
         });
         if (res.ok) {
@@ -191,7 +192,7 @@ export default function AssetsPage() {
       const mappedType = activeTab === "crypto" ? "crypto" : activeTab === "gold" ? "gold" : activeTab === "th" ? "th" : activeTab === "etf" ? "etf" : activeTab === "mutual_fund" ? "mutual_fund" : "usa";
       
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assets`, {
+        const res = await adminFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assets`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

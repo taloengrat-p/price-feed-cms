@@ -1,36 +1,17 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Price Feed CMS
 
-## Getting Started
+This CMS uses Firebase Authentication and the Go price feed API. Users sign in with Google; only Firebase users with the custom claim `admin: true` can open the CMS or call its admin endpoints. The Go API verifies the ID token and admin claim on every protected request. Do not place service account credentials in this repository or browser environment variables.
 
-First, run the development server:
+## Local development
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Install dependencies with `npm install`, then run `npm run dev`. The local `.env.local` currently points to the development Firebase project and local Go API. Start that API separately.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+To use the **production** Firebase project and Cloud Run API from this checkout, keep `.env.production` with these values and run `npm run dev:prod`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID=wealth-sphere-prod`
+- `NEXT_PUBLIC_API_URL=https://price-feed-api-prod-fglrllx3jq-as.a.run.app` (base URL; do not append `/api`)
+- the other Firebase **web app** configuration values from the production Firebase Console
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`.env.production` is intentionally ignored by Git. The `dev:prod` and `build:prod` scripts load it into the process before Next.js reads `.env.local`, so the local dev settings cannot override production. For a production build, run `npm run build:prod` and then `npm run start`. When deploying elsewhere, set the same `NEXT_PUBLIC_*` values in that build environment.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Enable Google as a sign-in provider and authorize the CMS host in Firebase Authentication for `wealth-sphere-prod` (include `localhost` when testing locally). Grant the intended existing Firebase user the `admin: true` custom claim using a trusted Admin SDK environment, then sign out and back in or click **Refresh access**. The CMS does not grant claims itself.

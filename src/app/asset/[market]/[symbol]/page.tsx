@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Activity, Users, Settings, RefreshCw, BarChart2, Globe } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
+import { adminFetch } from "@/lib/admin-api";
 import { ref, onValue } from "firebase/database";
 import { SymbolAvatar } from "@/components/SymbolAvatar";
 import { getPrePostLabel } from "@/lib/market-utils";
@@ -53,7 +54,7 @@ export default function AssetDetailPage() {
     // 1. Fetch Backend Details
     const fetchBackendDetail = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assets/${market}/${symbol}`);
+        const res = await adminFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assets/${market}/${symbol}`);
         if (!res.ok) {
           throw new Error("Asset not found or backend error");
         }
@@ -88,7 +89,7 @@ export default function AssetDetailPage() {
     setIsSyncing(true);
     try {
       const url = `${process.env.NEXT_PUBLIC_API_URL}/api/sync?symbol=${symbol}`;
-      await fetch(url, { method: "POST" });
+      await adminFetch(url, { method: "POST" });
     } catch (err) {
       console.error("Failed to force sync", err);
       alert("Failed to force sync");
@@ -104,11 +105,11 @@ export default function AssetDetailPage() {
     setIsSavingMock(true);
     try {
       const url = `${process.env.NEXT_PUBLIC_API_URL}/api/mock-price/${market}/${symbol}`;
-      await fetch(url, {
+      await adminFetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          market_price: Number(mockPrice),
+          marketPrice: Number(mockPrice),
           name: assetDetail?.name || symbol
         }),
       });

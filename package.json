@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:prod": "node scripts/with-prod-env.mjs dev",
+    "build:prod": "node scripts/with-prod-env.mjs build"
   },
   "dependencies": {
     "clsx": "^2.1.1",

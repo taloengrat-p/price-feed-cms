@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { adminFetch } from "@/lib/admin-api";
 import { Users, Search, Filter } from "lucide-react";
 
 interface SubscriptionStat {
@@ -30,7 +31,7 @@ export default function SubscriptionsPage() {
         url.searchParams.append("search", searchQuery);
       }
 
-      const res = await fetch(url.toString(), { cache: 'no-store' });
+      const res = await adminFetch(url.toString(), { cache: 'no-store' });
       if (res.ok) {
         const json = await res.json();
         console.log("Subscriptions API Response:", json);

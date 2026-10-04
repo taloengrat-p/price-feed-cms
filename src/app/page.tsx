@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { adminFetch } from "@/lib/admin-api";
 import { db } from "@/lib/firebase";
 import { ref, onValue } from "firebase/database";
 import { Activity, DollarSign, Server, Clock, Settings, RefreshCw, Power, Wifi, WifiOff, ArrowRight } from "lucide-react";
@@ -163,7 +164,7 @@ export default function Dashboard() {
 
   const loadToggles = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/sync-toggles`);
+      const res = await adminFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/sync-toggles`);
       if (res.ok) {
         setBackendConnected(true);
         const resData = await res.json();
@@ -185,7 +186,7 @@ export default function Dashboard() {
       loadToggles();
     }, 10000);
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/sync-interval`)
+    adminFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/sync-interval`)
       .then(res => res.json())
       .then(resData => {
         if(resData.interval_minutes) setSyncInterval(parseInt(resData.interval_minutes));
@@ -225,7 +226,7 @@ export default function Dashboard() {
   const handleUpdateSyncInterval = async (minutes: number) => {
     setIsUpdatingSync(true);
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/sync-interval`, {
+      await adminFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/sync-interval`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ interval_minutes: minutes }),
@@ -239,7 +240,7 @@ export default function Dashboard() {
 
   const toggleSync = async (key: string, value: boolean) => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/sync-toggle`, {
+      await adminFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/sync-toggle`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key, value }),
@@ -261,7 +262,7 @@ export default function Dashboard() {
     setActiveSync(syncTarget);
     
     try {
-      await fetch(url, { method: "POST" });
+      await adminFetch(url, { method: "POST" });
     } catch (error) {
       console.error("Failed to force sync", error);
     } finally {
@@ -271,10 +272,10 @@ export default function Dashboard() {
 
   const handleManualSave = async (market: string, symbol: string, price: number) => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/mock-price/${market}/${symbol}`, {
+      await adminFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/mock-price/${market}/${symbol}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ price }),
+        body: JSON.stringify({ marketPrice: price, name: symbol }),
       });
     } catch (error) {
       console.error("Failed to save manual price", error);
