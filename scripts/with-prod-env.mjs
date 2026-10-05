@@ -12,7 +12,7 @@ const command = process.argv[2];
 if (command !== "dev" && command !== "build") {
   throw new Error("Expected dev or build");
 }
-const child = spawn(process.execPath, ["./node_modules/next/dist/bin/next", command], {
+const child = spawn(process.execPath, ["./node_modules/next/dist/bin/next", command, ...process.argv.slice(3)], {
   env: process.env,
   stdio: "inherit",
 });
