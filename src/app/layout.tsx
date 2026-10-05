@@ -5,7 +5,7 @@ import { AdminGate } from "@/components/AdminGate";
 import { Activity, LayoutDashboard, Database } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "WealthSphere Price Feed",
+  title: "Wealth Sphere Price Feed",
   description: "Real-time asset price tracking dashboard",
 };
 
@@ -23,7 +23,7 @@ export default function RootLayout({
         <nav className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2 text-blue-400 font-extrabold text-xl tracking-tight">
-              <Activity className="w-6 h-6" /> WealthSphere
+              <Activity className="w-6 h-6" /> Wealth Sphere
               {isDev ? (
                 <span className="ml-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-500 rounded border border-amber-500/30">
                   DEV
