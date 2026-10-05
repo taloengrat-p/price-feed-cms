@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "dev:prod": "node scripts/with-prod-env.mjs dev",
-    "build:prod": "node scripts/with-prod-env.mjs build"
+    "build:prod": "node scripts/with-prod-env.mjs build",
+    "start:prod": "node scripts/with-prod-env.mjs start"
   },
   "dependencies": {
     "clsx": "^2.1.1",

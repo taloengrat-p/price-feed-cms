@@ -12,6 +12,6 @@ To use the **production** Firebase project and Cloud Run API from this checkout,
 - `NEXT_PUBLIC_API_URL=https://price-feed-api-prod-fglrllx3jq-as.a.run.app` (base URL; do not append `/api`)
 - the other Firebase **web app** configuration values from the production Firebase Console
 
-`.env.production` is intentionally ignored by Git. The `dev:prod` and `build:prod` scripts load it into the process before Next.js reads `.env.local`, so the local dev settings cannot override production. For a production build, run `npm run build:prod` and then `npm run start`. When deploying elsewhere, set the same `NEXT_PUBLIC_*` values in that build environment.
+`.env.production` is intentionally ignored by Git. The `dev:prod` and `build:prod` scripts load it into the process before Next.js reads `.env.local`, so the local dev settings cannot override production. For a production build, run `npm run build:prod` and then `npm run start:prod`. These commands use `.next-prod` so they can coexist with the local dev server on `.next`. When deploying elsewhere, set the same `NEXT_PUBLIC_*` values in that build environment.
 
 Enable Google as a sign-in provider and authorize the CMS host in Firebase Authentication for `wealth-sphere-prod` (include `localhost` when testing locally). Grant the intended existing Firebase user the `admin: true` custom claim using a trusted Admin SDK environment, then sign out and back in or click **Refresh access**. The CMS does not grant claims itself.

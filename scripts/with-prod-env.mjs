@@ -9,9 +9,10 @@ if (process.env.NEXT_PUBLIC_API_URL !== "https://price-feed-api-prod-fglrllx3jq-
   throw new Error("Production build requires the Cloud Run production API base URL");
 }
 const command = process.argv[2];
-if (command !== "dev" && command !== "build") {
-  throw new Error("Expected dev or build");
+if (command !== "dev" && command !== "build" && command !== "start") {
+  throw new Error("Expected dev, build, or start");
 }
+process.env.PRICE_FEED_CMS_DIST_DIR = ".next-prod";
 const child = spawn(process.execPath, ["./node_modules/next/dist/bin/next", command, ...process.argv.slice(3)], {
   env: process.env,
   stdio: "inherit",
